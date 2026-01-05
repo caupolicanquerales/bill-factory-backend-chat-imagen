@@ -31,7 +31,6 @@ public class ExecutingPromptImageService {
 	        
 	    return CompletableFuture.supplyAsync(() -> {
 	        var options = OpenAiImageOptions.builder()
-		        //.responseFormat("b64_json")
 		        .model(imageModelName)
 		        .build();
 		        
