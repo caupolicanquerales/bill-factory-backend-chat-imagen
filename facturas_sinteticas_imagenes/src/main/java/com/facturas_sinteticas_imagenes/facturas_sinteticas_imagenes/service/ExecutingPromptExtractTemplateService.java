@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
+
+import com.facturas_sinteticas_imagenes.facturas_sinteticas_imagenes.utils.AsyncUtil;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
@@ -30,19 +33,13 @@ public class ExecutingPromptExtractTemplateService {
 		Map<String,byte[]> files= Optional.ofNullable(storeFiles.getFileParts()).orElse(new HashMap<String,byte[]>());
 		storeFiles.setFileParts(new HashMap<String,byte[]>());
 		List<Message> listMessage = messageToChat.buildMessage(prompt, files);
-		return CompletableFuture.supplyAsync(() -> {
-			try {
-		            return this.chatClient.prompt()
-		                    .messages(listMessage)
-		                    .call() 
-		                    .content();
-		            
-		        } catch (Exception e) {
-		            System.err.println("Async error generating basic template for prompt: " + prompt + " - " + e.getMessage());
-		            throw new RuntimeException("Failed to generate image asynchronously.", e);
-		        }
-		        
-		    });
+
+		Supplier<String> supplier = () -> this.chatClient.prompt()
+				.messages(listMessage)
+				.call()
+				.content();
+
+		return AsyncUtil.executeAsync(supplier, "Async error generating basic template for prompt: " + prompt);
 	}
 	
 }

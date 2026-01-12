@@ -1,6 +1,9 @@
 package com.facturas_sinteticas_imagenes.facturas_sinteticas_imagenes.service;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
+
+import com.facturas_sinteticas_imagenes.facturas_sinteticas_imagenes.utils.AsyncUtil;
 
 import org.springframework.ai.image.ImageModel;
 import org.springframework.ai.image.ImagePrompt;
@@ -28,23 +31,17 @@ public class ExecutingPromptImageService {
 	
 	
 	public CompletableFuture<String> generateImageAsync(String prompt) {
-	        
-	    return CompletableFuture.supplyAsync(() -> {
-	        var options = OpenAiImageOptions.builder()
-		        .model(imageModelName)
-		        .build();
-		        
-	        ImagePrompt imagePrompt = new ImagePrompt(prompt, options);
-	        try {
-	            ImageResponse response = imageModel.call(imagePrompt);
-	            return response.getResults().get(0).getOutput().getB64Json();
-	            
-	        } catch (Exception e) {
-	            System.err.println("Async error generating image for prompt: " + prompt + " - " + e.getMessage());
-	            throw new RuntimeException("Failed to generate image asynchronously.", e);
-	        }
-	        
-	    });
-	 }
+		Supplier<String> supplier = () -> {
+			var options = OpenAiImageOptions.builder()
+					.model(imageModelName)
+					.build();
+
+			ImagePrompt imagePrompt = new ImagePrompt(prompt, options);
+			ImageResponse response = imageModel.call(imagePrompt);
+			return response.getResults().get(0).getOutput().getB64Json();
+		};
+
+		return AsyncUtil.executeAsync(supplier, "Async error generating image for prompt: " + prompt);
+	}
 }
 

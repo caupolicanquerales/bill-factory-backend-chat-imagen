@@ -26,6 +26,7 @@ import com.facturas_sinteticas_imagenes.facturas_sinteticas_imagenes.service.Con
 import com.facturas_sinteticas_imagenes.facturas_sinteticas_imagenes.service.ExecutingPromptExtractTemplateService;
 import com.facturas_sinteticas_imagenes.facturas_sinteticas_imagenes.service.StoreFilesService;
 import com.facturas_sinteticas_imagenes.facturas_sinteticas_imagenes.utils.ConverterUtil;
+import com.facturas_sinteticas_imagenes.facturas_sinteticas_imagenes.utils.SseStreamUtil;
 
 @RestController
 @RequestMapping("basic-template")
@@ -67,36 +68,8 @@ public class GenerationBasicTemplateController {
 	
 	@GetMapping(path = "/stream-basic-template", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamMessages() {
-		final SseEmitter emitter = new SseEmitter(300_000L);
-		executor.execute(() -> {
-            try {
-                emitter.send(SseEmitter.event()
-                    .name(eventName)
-                    .data("Basic Template generation started for prompt"));
-
-                executingPromptService.generateBasicTemplatAsync(prompt, storeFiles)
-                .whenComplete((result, exception) -> {
-                    if (exception != null) {
-                        emitter.completeWithError(exception);
-                        return;
-                    }
-                    
-                    try {
-                        emitter.send(SseEmitter.event()
-                                .name(eventName)
-                                .data(result));
-                        emitter.complete();
-                    } catch (IOException ioException) {
-                        emitter.completeWithError(ioException);
-                    }
-                });
-
-            } catch (Exception e) {
-                emitter.completeWithError(e);
-            }
-        });
-
-        return emitter;
+        return SseStreamUtil.stream(executor, eventName, "Basic Template generation started for prompt",
+                () -> executingPromptService.generateBasicTemplatAsync(prompt, storeFiles));
     }
 	
 }

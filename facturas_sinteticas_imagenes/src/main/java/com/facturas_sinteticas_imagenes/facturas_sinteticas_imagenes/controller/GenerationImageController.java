@@ -19,6 +19,7 @@ import com.facturas_sinteticas_imagenes.facturas_sinteticas_imagenes.request.Gen
 import com.facturas_sinteticas_imagenes.facturas_sinteticas_imagenes.response.GenerationSyntheticDataResponse;
 import com.facturas_sinteticas_imagenes.facturas_sinteticas_imagenes.service.ExecutingPromptImageService;
 import com.facturas_sinteticas_imagenes.facturas_sinteticas_imagenes.utils.ConverterUtil;
+import com.facturas_sinteticas_imagenes.facturas_sinteticas_imagenes.utils.SseStreamUtil;
 
 @RestController
 @RequestMapping("image")
@@ -45,35 +46,7 @@ public class GenerationImageController {
 	
 	@GetMapping(path = "/stream-image", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter streamImageGeneration() {
-		final SseEmitter emitter = new SseEmitter(300_000L);
-		executor.execute(() -> {
-            try {
-                emitter.send(SseEmitter.event()
-                    .name(eventName)
-                    .data("Image generation started for prompt"));
-
-                executingImage.generateImageAsync(prompt)
-                .whenComplete((result, exception) -> {
-                    if (exception != null) {
-                        emitter.completeWithError(exception);
-                        return;
-                    }
-                    
-                    try {
-                        emitter.send(SseEmitter.event()
-                                .name(eventName)
-                                .data(result));
-                        emitter.complete();
-                    } catch (IOException ioException) {
-                        emitter.completeWithError(ioException);
-                    }
-                });
-
-            } catch (Exception e) {
-                emitter.completeWithError(e);
-            }
-        });
-
-        return emitter;
+        return SseStreamUtil.stream(executor, eventName, "Image generation started for prompt",
+                () -> executingImage.generateImageAsync(prompt));
 	}
 }
