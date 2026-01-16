@@ -1,0 +1,14 @@
+# Build output
+target/
+
+# VCS / IDE
+.git/
+.gitignore
+.idea/
+.vscode/
+*.iml
+
+# OS / misc
+*.log
+*.swp
+*.tmp
